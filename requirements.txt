@@ -1,0 +1,4 @@
+requests
+scrapy
+scrapy-splash
+zenhan
