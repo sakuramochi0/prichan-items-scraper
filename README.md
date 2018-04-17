@@ -3,5 +3,10 @@
 
 Python scrapy scripts to gather the information of [Kiratto Pri☆Chan's arcade game items](https://prichan.jp/items/).
 
+## スクレイプしたアイテムリスト (Item list scraped)
+- [prichan_items.csv](https://github.com/sakuramochi0/prichan-items-scraper/blob/master/prichan_items/prichan_items.csv?q=%E3%82%B9%E3%82%A4%E3%83%BC%E3%83%88)
+
 ## ライセンス (License)
 - [GNU General Public License v3](LICENSE)
+
+ただし、[prichan_items.csv](https://github.com/sakuramochi0/prichan-items-scraper/blob/master/prichan_items/prichan_items.csv?q=%E3%82%B9%E3%82%A4%E3%83%BC%E3%83%88) は除く。
