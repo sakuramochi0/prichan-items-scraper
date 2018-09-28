@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import scrapy
+import re
 
 from prichan_items.spiders.utils import create_note_dict
-
 
 class ItemsSpider(scrapy.Spider):
     name = 'items'
@@ -15,9 +15,13 @@ class ItemsSpider(scrapy.Spider):
         """アイテム一覧トップページからシリーズへのリンクを取得してリクエストする"""
 
         series_links = response.css('.items-nav a::attr(href)').extract()
-        for series_link in series_links:
-            url = response.urljoin(series_link)
-            yield scrapy.Request(url=url, callback=self.parse_series)
+        series_names = response.css('.items-nav li ::text').extract()
+        names = re.sub(r"^[ \r\n]+","",re.sub(r"[\r\t　]+",""," ".join(series_names)), flags=(re.MULTILINE | re.DOTALL)).splitlines()
+        for index in range(len(series_links)):
+            url = response.urljoin(series_links[index])
+            if url.find("promotion.html") == -1 and url.find("robots.txt") == -1:
+                dan = "".join(re.sub("だい|だん|げんてい|きかん","",names[index],flags=(re.DOTALL)).split())
+                yield scrapy.Request(url=url, callback=self.parse_series, meta={"number": dan})
 
     def parse_series(self, response):
         """各シリーズページ全体をパースする"""
@@ -27,7 +31,7 @@ class ItemsSpider(scrapy.Spider):
         note = ''
 
         # みらいちゃんたちがモデルになってる画像付きのコーデセットごとのブロックのリスト
-        coordinate_list = response.css('li.coordinate-list')
+        coordinate_list = response.css('.coordinate-list')
 
         for coordinate in coordinate_list:
             # モデルの画像情報を取得
@@ -39,11 +43,10 @@ class ItemsSpider(scrapy.Spider):
 
             # ノート情報を探す
             note = self.note_dict.get(outfit_id, '')
-
             meta = {
                 'outfit_id': outfit_id,
                 'outfit_image_url': outfit_image_url,
-                'series_name': ' '.join(response.css('.items-nav .active ::text').extract()).strip(),
+                'series_name': response.meta.get("number"),
                 'series_url': response.url,
                 'note': note,
             }
@@ -56,7 +59,10 @@ class ItemsSpider(scrapy.Spider):
     def parse_detail_item(self, response):
         """アイテム詳細ページをパースする"""
 
-        category, item_id, ticket_id, color = response.css('.-detail .-value::text').extract()[:4]
+        category, color = response.css('.-detail .-value::text').extract()[:2]
+        color = re.sub(r"[\r\t\n　]+","",color, flags=(re.MULTILINE | re.DOTALL))
+        item_id = response.css('.-id::text').extract_first()
+        ticket_id = response.css('.-thumb img::attr(data-src)').re(r'/details\/(.+)\.(?:png|jpg)')
 
         # ブランド情報を取得
         m = response.css('.-detail.-brand img::attr(data-src)').re(r'/logo-(.+)\.(?:png|jpg)')
