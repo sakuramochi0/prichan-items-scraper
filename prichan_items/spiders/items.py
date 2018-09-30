@@ -20,7 +20,7 @@ class ItemsSpider(scrapy.Spider):
         for index in range(len(series_links)):
             url = response.urljoin(series_links[index])
             if url.find("promotion.html") == -1 and url.find("robots.txt") == -1:
-                dan = "".join(re.sub("だい|だん|げんてい|きかん","",names[index],flags=(re.DOTALL)).split())
+                dan = "".join(re.sub("だい|だん|げんてい|きかん|ねん|がつ","",names[index],flags=(re.DOTALL)).split())
                 yield scrapy.Request(url=url, callback=self.parse_series, meta={"number": dan})
 
     def parse_series(self, response):
