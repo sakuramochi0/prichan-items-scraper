@@ -1,0 +1,26 @@
+language: python
+python:
+- '3.6'
+install:
+- pip install scrapy
+script:
+- scrapy crawl items -o ./csv/`date '+%Y_%m_%d'`.csv
+- echo https://raw.githubusercontent.com/KeikaChan/prichan-items-scraper/master/csv/`date
+  '+%Y_%m_%d'`.csv > items_url
+after_success:
+  - echo -e "Host github.com\n\tStrictHostKeyChecking no\nIdentityFile ~/.ssh/deploy.key\n" >> ~/.ssh/config
+  - openssl aes-256-cbc -k "$SERVER_KEY" -in .travis/deploy_key.enc -d -a -out deploy.key
+  - cp deploy.key ~/.ssh/
+  - chmod 600 ~/.ssh/deploy.key
+  - git add --all
+  - 'git commit -m "Travis Auto Update $TRAVIS_JOB_NUMBER
+  https://travis-ci.org/great-h/great-h.github.io/builds/$TRAVIS_BUILD_ID"'
+  - '[ "x$TRAVIS_BRANCH" == "xsource" ] && git push origin master'
+branches:
+  only:
+  - master
+notifications:
+  email: false
+env:
+  global:
+    secure: N1kWzv3MEJnj9rEslsjPUikjnZWjTOabZ9kFol9GLszKDVI2wYxz+uAjXVuhFaRGlgppHr9+2wf9k2RzdOP7m3Z/+h2OFoERyHWCVieRlwt5Ot+9BBEIU7IxRXBhi5QSnz594Iefvf8b66nIIHrtph8WzhyAbTKtuVy0FdPP3d9Bg9gIFNNB/IlcUefUiCQSMZadjL5opIlfeTgDeLMYAJdhZL6vpe4VM10jpAhm7j/XKFZgj1KVG2txbB3urWmuaOysbr+fCzJh73U24NZy3hak05WZlj5gCGUyfyElJPuqHLxxzoGfJ7QOiOTSRB3cR+zwVq7mQF8hKEdnkyQeruXYd7QrgPVVb9/qW6Laz2CZKhNQfmBpmbVZHgZUpAh4WVWLKwkDGRIvj83RWp+Ugchr9+ZEi9gzqOQS4hpWvgsPN0DdUK2jTRRw+3BaHjMYDv8xxc/G4HginjHz5rIYz+/kU94U5DL26o81hLM+gJQ4vx5HsAXh5K5mkyncjjtnuuO1lnu199NL41Rio32lY5doSSlZVpEOozK4kdNs19+cuZ0tdpKkAEZ9uf2ktTKLD0lhsLFncWMm7x6kVDYj6h8Gp79EdAaMI69aOsj5CNH/sg3IVQe6iph/lKzMLTn1TqMP7/8CI39i+jm1W3jIOEBl4S+5S/dOIId/WqJRjok=
