@@ -4,6 +4,7 @@ import re
 
 from prichan_items.spiders.utils import create_note_dict
 
+
 class ItemsSpider(scrapy.Spider):
     name = 'items'
     allowed_domains = ['prichan.jp']
@@ -13,14 +14,34 @@ class ItemsSpider(scrapy.Spider):
 
     def parse(self, response):
         """アイテム一覧トップページからシリーズへのリンクを取得してリクエストする"""
+        name_list = []
 
+        def dellist(items, indexes): return [
+            item for index, item in enumerate(items) if index not in indexes]
+        delete_index = []
         series_links = response.css('.items-nav a::attr(href)').extract()
-        series_names = response.css('.items-nav li ::text').extract()
-        names = re.sub(r"^[ \r\n]+","",re.sub(r"[\r\t　]+",""," ".join(series_names)), flags=(re.MULTILINE | re.DOTALL)).splitlines()
+        count = 0
+        in_section = False
+        for sentence in response.css('.items-nav li'):
+            if len(sentence.css("li ::text").extract()) == 0:
+                in_section = True
+                name_list.extend(sentence.css("::text").extract())
+            else:
+                if in_section == True:
+                    delete_index.append(count)
+                    in_section = False
+                name_list.extend(sentence.css("li ::text").extract())
+            count += 1
+        series_names = name_list
+        names = re.sub(r"^[ \r\n]+", "", re.sub(r"[\r\t　]+", "", " ".join(
+            series_names)), flags=(re.MULTILINE | re.DOTALL)).splitlines()
+        names = dellist(names, delete_index)
+        print(names)
         for index in range(len(series_links)):
             url = response.urljoin(series_links[index])
             if url.find("promotion.html") == -1 and url.find("robots.txt") == -1:
-                dan = "".join(re.sub("だい|だん|げんてい|きかん|ねん|がつ","",names[index],flags=(re.DOTALL)).split())
+                dan = "".join(re.sub("だい|だん|げんてい|きかん|ねん|がつ", "",
+                                     names[index], flags=(re.DOTALL)).split())
                 yield scrapy.Request(url=url, callback=self.parse_series, meta={"number": dan})
 
     def parse_series(self, response):
@@ -37,7 +58,8 @@ class ItemsSpider(scrapy.Spider):
             # モデルの画像情報を取得
             outfit_id = coordinate.css('::attr(id)').extract_first()
             if outfit_id:
-                outfit_image_url = response.urljoin(coordinate.css('.-outfit img::attr(data-src)').extract_first())
+                outfit_image_url = response.urljoin(coordinate.css(
+                    '.-outfit img::attr(data-src)').extract_first())
             else:
                 outfit_image_url = ''
 
@@ -53,31 +75,38 @@ class ItemsSpider(scrapy.Spider):
 
             item_list = coordinate.css('.-detail')
             for item in item_list:
-                detail_url = response.urljoin(item.css('a::attr(href)').extract_first())
+                detail_url = response.urljoin(
+                    item.css('a::attr(href)').extract_first())
                 yield scrapy.Request(url=detail_url, meta=meta, callback=self.parse_detail_item)
 
     def parse_detail_item(self, response):
         """アイテム詳細ページをパースする"""
 
         category, color = response.css('.-detail .-value::text').extract()[:2]
-        color = re.sub(r"[\r\t\n　]+","",color, flags=(re.MULTILINE | re.DOTALL))
+        color = re.sub(r"[\r\t\n　]+", "", color,
+                       flags=(re.MULTILINE | re.DOTALL))
         item_id = response.css('.-id::text').extract_first()
-        ticket_id = response.css('.-thumb img::attr(data-src)').re(r'/details\/(.+)\.(?:png|jpg)')
+        ticket_id = response.css(
+            '.-thumb img::attr(data-src)').re(r'/details\/(.+)\.(?:png|jpg)')
 
         # ブランド情報を取得
-        m = response.css('.-detail.-brand img::attr(data-src)').re(r'/logo-(.+)\.(?:png|jpg)')
+        m = response.css(
+            '.-detail.-brand img::attr(data-src)').re(r'/logo-(.+)\.(?:png|jpg)')
         if m:
             brand = m[0]
-            brand_image_url = response.urljoin(response.css('.-detail.-brand img::attr(data-src)').extract_first())
+            brand_image_url = response.urljoin(response.css(
+                '.-detail.-brand img::attr(data-src)').extract_first())
         else:
             brand = ''
             brand_image_url = ''
 
         # ジャンル(ラブリー・ポップなどのタイプ)の情報を取得
-        m = response.css('.-detail.-genre img::attr(data-src)').re(r'/icon-(.+)\.(?:png|jpg)')
+        m = response.css(
+            '.-detail.-genre img::attr(data-src)').re(r'/icon-(.+)\.(?:png|jpg)')
         if m:
             genre = m[0]
-            genre_image_url = response.urljoin(response.css('.-detail.-genre img::attr(data-src)').extract_first())
+            genre_image_url = response.urljoin(response.css(
+                '.-detail.-genre img::attr(data-src)').extract_first())
         else:
             genre = ''
             genre_image_url = ''
