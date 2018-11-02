@@ -21,11 +21,12 @@ class ItemsSpider(scrapy.Spider):
         series_links = response.css('.items-nav a::attr(href)').extract()
         series_names = response.css('.items-nav li ::text').extract()
         name_with_ruby = re.sub(r"^[ \r\n]+", "", re.sub(r"[\r\t　]+", "", " ".join(
-            series_names)), flags=(re.MULTILINE | re.DOTALL)).splitlines()
+            series_names)), flags=(re.MULTILINE | re.DOTALL)).splitlines() # タブが入ったものが大量に取れてしまうためにそれを正規表現で削除
         names = []
         for item in name_with_ruby:
             names.append("".join(re.sub("だい|だん|げんてい|きかん|ねん|がつ",
-                                        "", item, flags=(re.DOTALL)).split()))
+                                        "", item, flags=(re.DOTALL)).split()))  # 正規表現でルビを削除
+        # 以下の部分で使わないURLやタイトル部分を手動で弾いている
         delete_list = ["第4弾", "第5弾", "第6弾", "第7弾", "第8弾", "プロモーション", "フォロチケ"]
         delete_url_list = ["index.html", "promotion.html", "ticket.html"]
         for item in delete_list:
@@ -40,10 +41,10 @@ class ItemsSpider(scrapy.Spider):
                 pass
         for index in range(len(series_links)):
             url = response.urljoin(series_links[index])
-            if url.find("promotion.html") == -1 and url.find("robots.txt") == -1:
+            if url.find("robots.txt") == -1:
                 dan = names[index]
                 print(dan)
-                yield scrapy.Request(url=url, callback=self.parse_series, meta={"number": dan})
+                yield scrapy.Request(url=url, callback=self.parse_series, meta={"number": dan})  # データの受け渡し、クロールする
 
     def parse_series(self, response):
         """各シリーズページ全体をパースする"""
