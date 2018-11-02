@@ -9,39 +9,40 @@ class ItemsSpider(scrapy.Spider):
     name = 'items'
     allowed_domains = ['prichan.jp']
     start_urls = ['https://prichan.jp/items/']
-
     note_dict = create_note_dict()
 
     def parse(self, response):
         """アイテム一覧トップページからシリーズへのリンクを取得してリクエストする"""
         name_list = []
+        url_list = []
 
         def dellist(items, indexes): return [
             item for index, item in enumerate(items) if index not in indexes]
-        delete_index = []
         series_links = response.css('.items-nav a::attr(href)').extract()
-        count = 0
-        in_section = False
-        for sentence in response.css('.items-nav li'):
-            if len(sentence.css("li ::text").extract()) == 0:
-                in_section = True
-                name_list.extend(sentence.css("::text").extract())
-            else:
-                if in_section == True:
-                    delete_index.append(count)
-                    in_section = False
-                name_list.extend(sentence.css("li ::text").extract())
-            count += 1
-        series_names = name_list
-        names = re.sub(r"^[ \r\n]+", "", re.sub(r"[\r\t　]+", "", " ".join(
+        series_names = response.css('.items-nav li ::text').extract()
+        name_with_ruby = re.sub(r"^[ \r\n]+", "", re.sub(r"[\r\t　]+", "", " ".join(
             series_names)), flags=(re.MULTILINE | re.DOTALL)).splitlines()
-        names = dellist(names, delete_index)
-        print(names)
+        names = []
+        for item in name_with_ruby:
+            names.append("".join(re.sub("だい|だん|げんてい|きかん|ねん|がつ",
+                                        "", item, flags=(re.DOTALL)).split()))
+        delete_list = ["第4弾", "第5弾", "第6弾", "第7弾", "第8弾", "プロモーション", "フォロチケ"]
+        delete_url_list = ["index.html", "promotion.html", "ticket.html"]
+        for item in delete_list:
+            try:
+                names.remove(item)
+            except ValueError:
+                pass
+        for item in delete_url_list:
+            try:
+                series_links.remove(item)
+            except ValueError:
+                pass
         for index in range(len(series_links)):
             url = response.urljoin(series_links[index])
             if url.find("promotion.html") == -1 and url.find("robots.txt") == -1:
-                dan = "".join(re.sub("だい|だん|げんてい|きかん|ねん|がつ", "",
-                                     names[index], flags=(re.DOTALL)).split())
+                dan = names[index]
+                print(dan)
                 yield scrapy.Request(url=url, callback=self.parse_series, meta={"number": dan})
 
     def parse_series(self, response):
