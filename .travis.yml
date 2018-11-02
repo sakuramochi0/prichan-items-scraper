@@ -1,12 +1,12 @@
 language: python
 python:
-- "3.7-dev"
+  - "3.7-dev"
 install:
-- pip install scrapy requests zenhan scrapy_splash
+  - pip install scrapy requests zenhan scrapy_splash
 script:
-- [ -e ./csv/`date  '+%Y_%m_%d'`.csv ] && rm ./csv/`date  '+%Y_%m_%d'`.csv
-- scrapy crawl items -o ./csv/`date '+%Y_%m_%d'`.csv
-- echo https://raw.githubusercontent.com/KeikaChan/prichan-items-scraper/master/csv/`date '+%Y_%m_%d'`.csv > items_url
+  - [ -e ./csv/`date  '+%Y_%m_%d'`.csv ] && rm ./csv/`date  '+%Y_%m_%d'`.csv
+  - scrapy crawl items -o ./csv/`date '+%Y_%m_%d'`.csv
+  - echo https://raw.githubusercontent.com/KeikaChan/prichan-items-scraper/master/csv/`date '+%Y_%m_%d'`.csv > items_url
 after_success:
   - echo -e "Host github.com\n\tStrictHostKeyChecking no\nIdentityFile ~/.ssh/deploy.key\n" >> ~/.ssh/config
   - openssl aes-256-cbc -k "$SERVER_KEY" -in .travis/deploy_key.enc -d -a -out deploy.key
@@ -18,7 +18,7 @@ after_success:
   - git push origin master'
 branches:
   only:
-  - master
+    - master
 notifications:
   email: false
 env:
