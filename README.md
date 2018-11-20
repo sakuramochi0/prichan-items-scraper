@@ -1,3 +1,7 @@
+現在、@KeikaChan さんがフォーク先でメンテナンスしてくださっています。ぜひこちらをご利用ください。
+
+KeikaChan/prichan-items-scraper: Python scrapy scripts to gather the information of PriChan's arcade game items (Update Weekly)). - https://github.com/KeikaChan/prichan-items-scraper
+
 # prichan-items-scraper
 「キラッとプリ☆チャン」のアーケードゲームの[アイテムリスト](https://prichan.jp/items/index.html)からアイテムの情報を収集するPythonのScrapyのスクリプトです。
 
